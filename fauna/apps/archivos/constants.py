@@ -1,0 +1,10 @@
+# sensors names
+ALPHANSENSE = "Alphasense"
+CANAIRO = "Canairo"
+CLARITY = "Clarity"
+DAVIS = "Davis"
+TSILINK = "TsiLink"
+PURPLEAIR = "PurpleAir"
+UCENTRAL = "UCentral"
+URADMONITOR = "UradMonitor"
+AIRE_CIUDADANO = "Aire Ciudadano"

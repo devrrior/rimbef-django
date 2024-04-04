@@ -1,0 +1,103 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:13.14-alpine3.19
+    container_name: postgres__fauna
+    ports:
+      - "5432:5432"
+    volumes:
+      - .data/:/tmp
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      PGDATA: /tmp
+    env_file:
+      - .env.local
+
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    container_name: pgadmin4
+    depends_on:
+      - postgres
+      - fauna
+    ports:
+      - "5052:5052"
+    volumes:
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    env_file:
+      - .env.local
+    tty: true
+
+  redis:
+    image: bitnami/redis:latest
+    container_name: redis__fauna
+    ports:
+      - "6379:6379"
+    environment:
+      ALLOW_EMPTY_PASSWORD: "no"
+      REDIS_PASSWORD: ABCDE
+
+  fauna:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.local
+    environment:
+      - DJANGO_SETTINGS_MODULE=fauna.settings.local
+    volumes:
+      - .:/backend
+    command: >
+      sh -c "
+      python manage.py migrate &&
+      python manage.py migrate django_celery_results &&
+      python manage.py runserver 0.0.0.0:8000
+      "
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - redis
+      - celery-worker
+
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.local
+    environment:
+      - DJANGO_SETTINGS_MODULE=fauna.settings.local
+    volumes:
+      - .:/backend
+    command: >
+      sh -c "
+      celery -A fauna.config.celery worker -l info
+      "
+    depends_on:
+      - postgres
+      - redis
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.local
+    environment:
+      - DJANGO_SETTINGS_MODULE=fauna.settings.local
+    user: root
+    volumes:
+      - .:/backend
+    command: >
+      sh -c "
+      celery -A fauna.config.celery beat -l info
+      "
+    depends_on:
+      - fauna
+      - postgres
+      - redis

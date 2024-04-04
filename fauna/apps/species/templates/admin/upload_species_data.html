@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="app">
+    <div class="card">
+        <div class="card-content">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-row input-field">
+                    {% if field.widget_type != 'select' %}
+                    <br>
+                    <label class="required" for="{{ field.id_for_label }}">
+                        {{ field.label }}
+                        {% if field.field.required %} * {% endif %}
+                    </label>
+                    <br>
+                    {% endif %}
+                    {{ field }}
+                    {% if field.errors %}
+                    {% for field_error in field.errors %}
+                    <span id="{{ field.id_for_label }}-help-block" class="help-block has-danger">{{ field_error}}</span>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <div class="submit-row">
+                    <button class="btn waves-effect waves-light default" type="submit" name="action">
+                        Enviar
+                        <i class="material-icons right">send</i>
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
